@@ -409,7 +409,7 @@ class Placer:
     
     def get_board(self):
         print("Getting r/place current status...")
-        
+
         boardimg = [None, None, None, None, None, None]
         ws = create_connection("wss://gql-realtime-2.reddit.com/query", origin="https://garlic-bread.reddit.com")  # works
         
@@ -684,7 +684,7 @@ if __name__ == '__main__':
 
 
     ##### TEMPPPPPPPP ##### TODO
-    args.plain = ["dank-crimson-hze", "5xv^k$Y9MaW6"]
+    
     #### TEMPPPPPPPP
 
     if args.plain is not None:
@@ -693,8 +693,9 @@ if __name__ == '__main__':
     elif args.token is not None:
         cliBotConfig.session_token = args.token[0]
     else:
-        print("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
-        exit(1)
+        args.plain = ["dank-crimson-hze", "5xv^k$Y9MaW6"]
+        # print("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
+        # exit(1)
 
     cliBotConfig.template = args.template
 
