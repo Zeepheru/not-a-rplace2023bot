@@ -26,6 +26,7 @@ import random
 import os
 
 from main_vars import *
+from main_utils import *
 import bot_logger 
 
 ######## 
@@ -33,6 +34,9 @@ VERSION = "0.6.1"
 
 CURRENT_CANVASES = [1,4]
 ######## 
+global start_time, pixels_placed_count
+start_time = time.time()
+pixels_placed_count = 0
 
 ## load logger
 global log
@@ -374,7 +378,7 @@ class Placer:
         # log.debug(csrf_token)
         
         # authenticate
-        log.debug(username + ", " + password)
+        # log.debug(username + ", " + password)
 
         log.info(f"Logging in with username: {username} ...")
 
@@ -514,6 +518,13 @@ class Placer:
         return boardimg
     
     def place_tile(self, canvas: int, x: int, y: int, color: int):
+        if not self.token:
+            # this happened once, so here's something to catch it.
+            log.critical("self.token is None.")
+            bot_exit(3)
+
+        rl_mode = 0 # hack to tell external code whether pixel placement is successful
+
         headers = self.INITIAL_HEADERS.copy()
         headers.update({
             "apollographql-client-name"   : "garlic-bread",
@@ -522,7 +533,7 @@ class Placer:
             "origin"                      : "https://garlic-bread.reddit.com",
             "referer"                     : "https://garlic-bread.reddit.com/",
             "sec-fetch-site"              : "same-site",
-            "authorization"               : "Bearer " + self.token
+            "authorization"               : "Bearer " + str(self.token)
         })
 
         r = requests.post("https://gql-realtime-2.reddit.com/query",
@@ -547,15 +558,17 @@ class Placer:
         
         if r.status_code != 200:
             log.critical("Pixel placement status code not 200: " + str(r.status_code))
+            bot_exit(3)
 
         try:
             if r.json()["data"] is None:
                 try:
                     waitTimems = math.floor(
                         r.json()["errors"][0]["extensions"]["nextAvailablePixelTs"])
-                    log.warning("placing failed: rate limited")
+                    rl_mode = 1
                 except IndexError:
                     waitTimems = 10000
+                    rl_mode = 1
             else:
                 waitTimems = math.floor(r.json()["data"]["act"]["data"][0]["data"]
                                     ["nextAvailablePixelTimestamp"])
@@ -565,12 +578,12 @@ class Placer:
             if r.json()["errors"]:
                 log.critical(r.json())
                 log.critical("\nOther form of error encountered while setting pixel. Exiting...")
-                exit(3)
+                bot_exit(3)
             else:
                 log.critical("\nOther form of error encountered while setting pixel. No valid error response. Exiting...")
-                exit(3)
+                bot_exit(3)
         
-        return waitTimems / 1000
+        return waitTimems / 1000, rl_mode
 
 
 def AbsCoordToCanvasCoord(x: int, y: int):
@@ -610,18 +623,23 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
         hex_color = rgb_to_hex(closest_color(templateData[x, y], rgb_colors_array)) # find closest colour in colour map
 
         if not place.modeSetPixels:
-            log.info("Pixel not placed due to debug mode.")
+            log.warning("Pixel not placed due to debug mode.")
 
         else:
-            # return 0
-            timestampOfSafePlace = place.place_tile(int(canvas_id), cx, cy, int(COLOR_MAP[hex_color])) # and convert hex_color to color ID for request
+            timestampOfSafePlace, rl_mode = place.place_tile(int(canvas_id), cx, cy, int(COLOR_MAP[hex_color])) # and convert hex_color to color ID for request
             
             # add random delay after placing tile (to reduce chance of bot detection)
             #timestampOfSafePlace += random.uniform(5, 30)
-            timestampOfSafePlace += random.uniform(0.1,2)
+            if rl_mode == 0:
+                global pixels_placed_count
+                # no rate limit
+                timestampOfSafePlace += random.uniform(0.1,2)
+                log.info(f"Placed Pixel '{COLOR_NAMES_MAP.get(hex_color, hex_color)}' at [{x-1500}, {y-1000}]. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
+                pixels_placed_count += 1
 
-            ### TODO need to to write something else when rate limited
-            log.info(f"Placed Pixel '{COLOR_NAMES_MAP.get(hex_color, hex_color)}' at [{x-1500}, {y-1000}]. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
+            elif rl_mode == 1:
+                # rate limited
+                log.warning(f"Rate limited. Pixel not placed. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
             
             return timestampOfSafePlace
     
@@ -673,6 +691,13 @@ def updateCanvasState(ids: Union[int, List[int]]):
     
     return
 
+def bot_exit(exitcode):
+    # to gracefully exit this thing.
+    uptime = get_time_passed(start_time)
+    log.info(f"Uptime: {uptime}")
+    log.info(f"Pixels placed: {pixels_placed_count}")
+
+    exit(exitcode)
 
 if __name__ == '__main__':
     import argparse
@@ -685,7 +710,7 @@ if __name__ == '__main__':
 
     cliBotConfig = CLIBotConfig()
 
-    args.plain = ["6e_not_Your_Friend", "*Xr#a8^RRLTE"]# TEMP TEMP TEMP TEMP TEMP TEMP
+    # args.plain = ["6e_not_Your_Friend", "*Xr#a8^RRLTE"]# TEMP TEMP TEMP TEMP TEMP TEMP
 
     if args.plain is not None:
         cliBotConfig.username = args.plain[0]
@@ -699,18 +724,20 @@ if __name__ == '__main__':
                 logins = f.readlines()
 
             login1 = logins[0]
-            # username, password = login1.split(" ")[:1]
+            cliBotConfig.username, cliBotConfig.password = login1.split(" ")[:2]
 
             log.info(f'Auth args not provided, loading from file.')
 
         else:
             log.critical("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
-            exit(1)
+            bot_exit(1)
 
     cliBotConfig.template = args.template
 
     ## DEBUG
     cliBotConfig.modeSetPixels = True
+    if not cliBotConfig.modeSetPixels:
+        log.warning("DEBUG MODE. BOT WILL NOT SET PIXELS TO AVOID UNNECESSARY API CALLS.")
     ##
 
     # hmmmmm
@@ -733,7 +760,7 @@ if __name__ == '__main__':
                 # Out of date!
             #    print("-------------------------------\nHello. Thanks for running our MLP r/place Python bots (PonyPixel).\nThese bots are now non-functional as r/place is over.\nWe succeeded. You can run `python checkDamage.py` to see the final damage levels.\nI recommend uninstalling PonyPixel now as it serves no purpose...\nUnless you wish to deconstruct it and learn Python.\nI have a donation link at https://ko-fi.com/cloudburstsys if you want to donate to me, however it is not required\nThank you soldier. Pony on.")
             #    print("\a-------------------------------\nBOT IS OUT OF DATE!\nPlease repull the bot (git pull) and restart your bots.")
-            #    exit(3)
+            #    bot_exit(3)
 
             for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting
                 time.sleep(1)
@@ -745,12 +772,12 @@ if __name__ == '__main__':
 
             except WebSocketConnectionClosedException:
                 log.critical("\aWebSocket connection refused. Auth issue.")
-                exit(1)
+                bot_exit(1)
             
             time_to_wait = timestampOfPlaceAttempt - time.time()
             if time_to_wait > DAY:
                 log.critical("\a-------------------------------\nBOT BANNED FROM R/PLACE\nPlease generate a new account and rerun.")
-                exit(2)
+                bot_exit(2)
             
             time.sleep(5)
         except KeyboardInterrupt:
