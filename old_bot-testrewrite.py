@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-# @DjMoontune on Twitter owes @GleamyD on Twitter one (1) ice cream date.
-# The above statement is here because I said I'd do it.
-# https://twitter.com/leahpone/status/1540418467555426306
+# adopted from https://github.com/CloudburstSys/PonyPixel
 
 import math
 from traceback import print_exc
@@ -25,21 +23,22 @@ from PIL import Image
 import numpy as np
 import random
 
+import os
 
 from main_vars import *
+import bot_logger 
 
-DAY = 86400
-HOUR = 3600
+######## 
 VERSION = "0.6.1"
 
-CANVAS_IDS     = [   0,    1,    2,    3,    4,    5]
-CANVAS_XOFFSET = [   0, 1000, 2000,    0, 1000, 2000]
-CANVAS_YOFFSET = [   0,    0,    0, 1000, 1000, 1000]
-CANVAS_XSIZE   = [1000, 1000, 1000, 1000, 1000, 1000]
-CANVAS_YSIZE   = [1000, 1000, 1000, 1000, 1000, 1000]
-CanvasIdMap = None
-
 CURRENT_CANVASES = [1,4]
+######## 
+
+## load logger
+global log
+log = bot_logger.setupLogger(consolelevel="info", enableLogFile=True)
+
+##
 
 max_x = int(max(xoffset+xsize for xoffset, xsize in zip(CANVAS_XOFFSET, CANVAS_XSIZE)))
 max_y = int(max(yoffset+ysize for yoffset, ysize in zip(CANVAS_YOFFSET, CANVAS_YSIZE)))
@@ -65,7 +64,6 @@ def image_to_npy(img):
     return np.asarray(img).transpose((1, 0, 2))
 
 
-#rPlaceTemplatesGithubLfs = True
 #"https://github.com/r-ainbowroad/2023-minimap/blob/main/templates/mlp" 
 
 rPlaceTemplateBaseUrl = "https://media.githubusercontent.com/media/r-ainbowroad/2023-minimap/main/templates/mlp" 
@@ -100,8 +98,8 @@ def setRPlaceTemplate(templateName):
     global rPlaceTemplate
     template = rPlaceTemplates.get(templateName, None)
     if template is None:
-        print("Invalid /r/place template name:", templateName)
-        print(f"Must be one of {rPlaceTemplates.keys()}")
+        log.warning("Invalid /r/place template name:", templateName)
+        log.warning(f"Must be one of {rPlaceTemplates.keys()}")
         return
     
     rPlaceTemplateName = templateName
@@ -314,7 +312,7 @@ def getDiff(currentData, templateData):
 
     visualizeDiff(diff) # for visualizing the error pixels, error pixels are marked in red. 
     
-    print(f'Total Damage: {len(diff) / (templateData[:, :, 3] != 0.0).sum():.1%}', len(diff), (templateData[:, :, 3] != 0.0).sum())
+    log.info(f'Total Damage: {len(diff) / (templateData[:, :, 3] != 0.0).sum():.1%} | {len(diff)}/{(templateData[:, :, 3] != 0.0).sum()}')
     return diff
 
 ###########################
@@ -373,23 +371,23 @@ class Placer:
         login_get_soup = BeautifulSoup(r.content, "html.parser")
         csrf_token = login_get_soup.find("input", {"name": "csrf_token"})["value"]
         
-        # print(csrf_token)
+        # log.debug(csrf_token)
         
         # authenticate
-        # print(username, password)
+        log.debug(username + ", " + password)
 
-        print(f"Logging in with username: {username} ...")
+        log.info(f"Logging in with username: {username} ...")
 
         data = {"username":username,
                 "password":password,
                 "dest":self.REDDIT_URL,
                 "csrf_token":csrf_token
                 }
-        # print(data)
+        # log.debug(data)
         r = self.client.post(self.LOGIN_URL, data=data)
         time.sleep(1)
         
-        print("LOGIN-RESPONSE: " + str(r.content))
+        log.info("LOGIN-RESPONSE: " + str(r.content))
         assert r.status_code == 200
         
         # get the new access token
@@ -401,24 +399,25 @@ class Placer:
         data = json.loads(data_str)
         self.token = data["user"]["session"]["accessToken"]
 
-        # print("TOKEN: " + str(self.token))
+        log.debug("TOKEN: " + str(self.token))
 
     def login_token(self, session_token: str):
-        print(session_token)
+        log.debug(session_token)
         self.token = session_token
     
     def get_board(self):
-        print("Getting r/place current status...")
+        log.info("Getting r/place current status...")
 
         boardimg = [None, None, None, None, None, None]
         ws = create_connection("wss://gql-realtime-2.reddit.com/query", origin="https://garlic-bread.reddit.com")  # works
         
         # initialization message
+        # log.info(self.token)
         ws.send(
             json.dumps({
                 "type"   : "connection_init",
                 "payload": {
-                    "Authorization": "Bearer " + self.token
+                    "Authorization": "Bearer " + str(self.token)
                 },
             }))
         ws.recv()
@@ -463,9 +462,9 @@ class Placer:
                         # hacky?
                         rgb_colors_array = []
                         init_rgb_colors_array(ref_color_map=COLOR_MAP)
-                        print(f"Color palette is incorrect. Palette updated to current {len(COLOR_MAP)} available colors.")
+                        log.info(f"Color palette is incorrect. Palette updated to current {len(COLOR_MAP)} available colors.")
                     else:
-                        print("Color palette is correct.")
+                        log.debug("Color palette is correct.")
                     
                     color_configured = True
 
@@ -504,12 +503,12 @@ class Placer:
                     msg = temp["payload"]["data"]["subscribe"]
                     if msg["data"]["__typename"] == "FullFrameMessageData":
                         # print("Got Canvas {}: {}".format(c, msg["data"]["name"]))
-                        print(f"Got Canvas {c}.")
+                        log.debug(f"Got Canvas {c}.")
 
                         boardimg[c] = BytesIO(urllib.request.urlopen(msg["data"]["name"]).read())
                         break
 
-        
+        log.info("Canvases obtained.")
         ws.close()
                 
         return boardimg
@@ -536,7 +535,7 @@ class Placer:
                                           "canvasIndex": canvas,
                                           "colorIndex" : color,
                                           "coordinate" : {
-                                              "x": x, #temp botch
+                                              "x": x, 
                                               "y": y
                                           }
                                       },
@@ -547,26 +546,29 @@ class Placer:
                           headers=headers)
         
         if r.status_code != 200:
-            print("Pixel placement status code not 200: " + str(r.status_code))
+            log.critical("Pixel placement status code not 200: " + str(r.status_code))
 
         try:
             if r.json()["data"] is None:
                 try:
                     waitTimems = math.floor(
                         r.json()["errors"][0]["extensions"]["nextAvailablePixelTs"])
-                    print("placing failed: rate limited")
+                    log.warning("placing failed: rate limited")
                 except IndexError:
                     waitTimems = 10000
             else:
                 waitTimems = math.floor(r.json()["data"]["act"]["data"][0]["data"]
                                     ["nextAvailablePixelTimestamp"])
-                print("placing succeeded")
+                log.info("Placing succeeded")
 
         except:
-            print(r.json())
-            #TODO This should call an error that for the time being, shuts down the script. 
-            # botch
-            waitTimems = 10e8 # 12 days. 
+            if r.json()["errors"]:
+                log.critical(r.json())
+                log.critical("\nOther form of error encountered while setting pixel. Exiting...")
+                exit(3)
+            else:
+                log.critical("\nOther form of error encountered while setting pixel. No valid error response. Exiting...")
+                exit(3)
         
         return waitTimems / 1000
 
@@ -602,13 +604,13 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
         
         # Send request to correct pixel that doesn't match template
         cx, cy, canvas_id = AbsCoordToCanvasCoord(x, y)
-        print(f"Actual Positions: ({cx}, {cy}), canvas {canvas_id}")
-        print(f"Global Positions: ({x}, {y})")
+        log.info(f"Actual Positions: ({cx}, {cy}), canvas {canvas_id}")
+        log.info(f"Global Positions: ({x}, {y})")
 
         hex_color = rgb_to_hex(closest_color(templateData[x, y], rgb_colors_array)) # find closest colour in colour map
 
         if not place.modeSetPixels:
-            print("Pixel not placed due to debug mode.")
+            log.info("Pixel not placed due to debug mode.")
 
         else:
             # return 0
@@ -618,7 +620,8 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
             #timestampOfSafePlace += random.uniform(5, 30)
             timestampOfSafePlace += random.uniform(0.1,2)
 
-            print(f"Placed Pixel '{COLOR_NAMES_MAP.get(hex_color, hex_color)}' at [{x-1500}, {y-1000}]. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
+            ### TODO need to to write something else when rate limited
+            log.info(f"Placed Pixel '{COLOR_NAMES_MAP.get(hex_color, hex_color)}' at [{x-1500}, {y-1000}]. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
             
             return timestampOfSafePlace
     
@@ -682,10 +685,7 @@ if __name__ == '__main__':
 
     cliBotConfig = CLIBotConfig()
 
-
-    ##### TEMPPPPPPPP ##### TODO
-    
-    #### TEMPPPPPPPP
+    args.plain = ["6e_not_Your_Friend", "*Xr#a8^RRLTE"]# TEMP TEMP TEMP TEMP TEMP TEMP
 
     if args.plain is not None:
         cliBotConfig.username = args.plain[0]
@@ -693,9 +693,19 @@ if __name__ == '__main__':
     elif args.token is not None:
         cliBotConfig.session_token = args.token[0]
     else:
-        args.plain = ["dank-crimson-hze", "5xv^k$Y9MaW6"]
-        # print("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
-        # exit(1)
+        # loading from logins.txt (TEMP SOUTION)
+        if os.path.exists("logins.txt"):
+            with open("logins.txt", "r") as f:
+                logins = f.readlines()
+
+            login1 = logins[0]
+            # username, password = login1.split(" ")[:1]
+
+            log.info(f'Auth args not provided, loading from file.')
+
+        else:
+            log.critical("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
+            exit(1)
 
     cliBotConfig.template = args.template
 
@@ -728,28 +738,27 @@ if __name__ == '__main__':
             for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting
                 time.sleep(1)
             
-            # try:
-                
-            updateTemplate() #working
-            updateCanvasState([0, 1, 2, 3, 4, 5])
-            timestampOfPlaceAttempt = AttemptPlacement(place)
+            try:
+                updateTemplate() #working
+                updateCanvasState([0, 1, 2, 3, 4, 5])
+                timestampOfPlaceAttempt = AttemptPlacement(place)
 
-            # except WebSocketConnectionClosedException:
-            #     print("\aWebSocket connection refused. Auth issue.")
-            #     exit(1)
+            except WebSocketConnectionClosedException:
+                log.critical("\aWebSocket connection refused. Auth issue.")
+                exit(1)
             
             time_to_wait = timestampOfPlaceAttempt - time.time()
             if time_to_wait > DAY:
-                print("\a-------------------------------\nBOT BANNED FROM R/PLACE\nPlease generate a new account and rerun.")
+                log.critical("\a-------------------------------\nBOT BANNED FROM R/PLACE\nPlease generate a new account and rerun.")
                 exit(2)
             
             time.sleep(5)
         except KeyboardInterrupt:
-            print('KeyboardInterrupt: Exiting Application')
+            log.critical('KeyboardInterrupt: Exiting Application')
             break
         except Exception as err:
             print("-------------------------------")
             print_exc() # print stack trace
-            print("-------------------------------\nNON-TERMINAL ERROR ENCOUNTERED\nBot is reviving. Please wait...")
+            log.critical("-------------------------------\nNON-TERMINAL ERROR ENCOUNTERED\nBot is reviving. Please wait...")
             time.sleep(15)
             need_init = True

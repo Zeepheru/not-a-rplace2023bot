@@ -1,3 +1,16 @@
+# misc
+DAY = 86400
+HOUR = 3600
+
+# canvas chunk info, assumed correct. 
+CANVAS_IDS     = [   0,    1,    2,    3,    4,    5]
+CANVAS_XOFFSET = [   0, 1000, 2000,    0, 1000, 2000]
+CANVAS_YOFFSET = [   0,    0,    0, 1000, 1000, 1000]
+CANVAS_XSIZE   = [1000, 1000, 1000, 1000, 1000, 1000]
+CANVAS_YSIZE   = [1000, 1000, 1000, 1000, 1000, 1000]
+CanvasIdMap = None
+
+
 
 # color
 COLOR_MAP_FULL = {
