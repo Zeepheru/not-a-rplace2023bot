@@ -633,7 +633,7 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
             if rl_mode == 0:
                 global pixels_placed_count
                 # no rate limit
-                timestampOfSafePlace += random.uniform(0.1,2)
+                timestampOfSafePlace += random.uniform(1,5)
                 log.info(f"Placed Pixel '{COLOR_NAMES_MAP.get(hex_color, hex_color)}' at [{x-1500}, {y-1000}]. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
                 pixels_placed_count += 1
 
