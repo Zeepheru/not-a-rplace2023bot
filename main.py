@@ -780,6 +780,7 @@ if __name__ == '__main__':
             time.sleep(5)
         except KeyboardInterrupt:
             log.critical('KeyboardInterrupt: Exiting Application')
+            bot_exit(0)
             break
         except Exception as err:
             print("-------------------------------")
