@@ -1,0 +1,118 @@
+{
+  "payload": {
+    "data": {
+      "subscribe": {
+        "id": "aa462087-3ad7-4a10-96e5-56aaf2ae8f72",
+        "data": {
+          "__typename": "ConfigurationMessageData",
+          "colorPalette": {
+            "colors": [
+              {
+                "hex": "#FF4500",
+                "index": 2,
+                "__typename": "Color"
+              },
+              {
+                "hex": "#FFA800",
+                "index": 3,
+                "__typename": "Color"
+              },
+              {
+                "hex": "#FFD635",
+                "index": 4,
+                "__typename": "Color"
+              },
+              {
+                "hex": "#00A368",
+                "index": 6,
+                "__typename": "Color"
+              },
+              {
+                "hex": "#3690EA",
+                "index": 13,
+                "__typename": "Color"
+              },
+              {
+                "hex": "#B44AC0",
+                "index": 19,
+                "__typename": "Color"
+              },
+              {
+                "hex": "#000000",
+                "index": 27,
+                "__typename": "Color"
+              },
+              {
+                "hex": "#FFFFFF",
+                "index": 31,
+                "__typename": "Color"
+              }
+            ],
+            "__typename": "ColorPalette"
+          },
+          "canvasConfigurations": [
+            {
+              "index": 0,
+              "dx": 0,
+              "dy": 0,
+              "__typename": "CanvasConfiguration"
+            },
+            {
+              "index": 1,
+              "dx": 1000,
+              "dy": 0,
+              "__typename": "CanvasConfiguration"
+            },
+            {
+              "index": 2,
+              "dx": 2000,
+              "dy": 0,
+              "__typename": "CanvasConfiguration"
+            },
+            {
+              "index": 3,
+              "dx": 0,
+              "dy": 1000,
+              "__typename": "CanvasConfiguration"
+            },
+            {
+              "index": 4,
+              "dx": 1000,
+              "dy": 1000,
+              "__typename": "CanvasConfiguration"
+            },
+            {
+              "index": 5,
+              "dx": 2000,
+              "dy": 1000,
+              "__typename": "CanvasConfiguration"
+            }
+          ],
+          "activeZone": {
+            "topLeft": {
+              "x": 1000,
+              "y": 500,
+              "__typename": "Point"
+            },
+            "bottomRight": {
+              "x": 1999,
+              "y": 1499,
+              "__typename": "Point"
+            },
+            "__typename": "ActiveZone"
+          },
+          "canvasWidth": 1000,
+          "canvasHeight": 1000,
+          "adminConfiguration": {
+            "maxAllowedCircles": 50,
+            "maxUsersPerAdminBan": 1000,
+            "__typename": "AdminConfiguration"
+          }
+        },
+        "__typename": "BasicMessage"
+      }
+    }
+  },
+  "id": "1",
+  "type": "data"
+}
