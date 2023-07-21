@@ -710,8 +710,6 @@ if __name__ == '__main__':
 
     cliBotConfig = CLIBotConfig()
 
-    # args.plain = ["6e_not_Your_Friend", "*Xr#a8^RRLTE"]# TEMP TEMP TEMP TEMP TEMP TEMP
-
     if args.plain is not None:
         cliBotConfig.username = args.plain[0]
         cliBotConfig.password = args.plain[1]
