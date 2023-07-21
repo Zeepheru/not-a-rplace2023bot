@@ -1,0 +1,15 @@
+# logs
+log
+logs
+!logger
+
+temp
+
+# sensitive
+*.txt
+auth.json
+notes.md
+
+# etc
+*.pdf
+*.png

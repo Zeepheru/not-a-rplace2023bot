@@ -1,0 +1,78 @@
+{
+	"Request Headers (1.847 kB)": {
+		"headers": [
+			{
+				"name": "Accept",
+				"value": "*/*"
+			},
+			{
+				"name": "Accept-Encoding",
+				"value": "gzip, deflate, br"
+			},
+			{
+				"name": "Accept-Language",
+				"value": "en-GB,en;q=0.5"
+			},
+			{
+				"name": "apollographql-client-name",
+				"value": "garlic-bread"
+			},
+			{
+				"name": "apollographql-client-version",
+				"value": "0.0.1"
+			},
+			{
+				"name": "authorization",
+				"value": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IlNIQTI1NjpzS3dsMnlsV0VtMjVmcXhwTU40cWY4MXE2OWFFdWFyMnpLMUdhVGxjdWNZIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1c2VyIiwiZXhwIjoxNjg5OTYyNTU2Ljk4MzA1OCwiaWF0IjoxNjg5ODc2MTU2Ljk4MzA1OCwianRpIjoiaTZJY3VCQ1B4bWJMYXJKQUN2RFAwRnQwdzRZcDdnIiwiY2lkIjoiOXRMb0Ywc29wNVJKZ0EiLCJsaWQiOiJ0Ml8zNTM2Y3Z0cSIsImFpZCI6InQyXzM1MzZjdnRxIiwibGNhIjoxNTQ5MTY1MjA5MjA3LCJzY3AiOiJlSnhra2RHTzlDQUloZC1GYTVfZ2Y1VV9tNDFWT2tOV3BRSHNaTjUtWXl1ZEpudlZBLWRUNGZRX1lJMVVJTUJHQkFGaVN0eWJRWUFrbURPWlFnRE1ORHByaVNRUTRFbHFMRzhJUUJtYmtRMVphTWNhVzN3Z0JLaWNFN2VWSHBjMm9hVWJpNTRkdjZweUxqeXBPVWZsM05qbUxXeFA5RE1icTAycFdOWlRtY1IxcFhRV0xfb1pPOVMzOXVVel9TYTBSOE9LcXZHQm95TVk4X0haV01aaUd2ZnhucHIwWkYwd3E3M0xRV3BmNnJHNzlrV1QwREs0X1J4dnZEYVRHWEplbXA3Ul90MzFTLWpBUGNfTDlOcUJHYXY3WHJydFdidF8xUTVVemlqUldKejROQnk1Y3ZrZXZ3VGJOZWxmNDNaa0xMNFpjZE1iZm1zNk9uSng0dENuOGZVYkFBRF9fMThTMkZFIiwicmNpZCI6InoyeXk5ekM4RmdlaXA3STFaY3lTWXpPcG9ic1BEdGRxSEx4WkxUUWFSQm8iLCJmbG8iOjJ9.FfO8i48mkURE5jFyPfKuNQY8CJoRQjH3ByDz05UFsouNQ52NbqOBpr9lwIBU_d5llczM3DJXKaqiuCkkHVa69xENF9J8wV6COlIVC0NHconi2kchpXx-kqjS1I0aQnS02Dm7zEQcTtrLS6LKCdK4m9a1buZFuV3Xw-azMO5BuM0Z6LPbbcUmtnc-R2uN-G8ebxfbAUbF3gJKAHP4YGixOdOpTq32Ya6iLsumQaY9yB9gK1aEqCWLyahWypdLvalBZUeJYwCvnLdixjKh9I8UtBKqk8GuMpyzky-A88EYLFhxkPNwNv3oVd0zycNGvTqoKr4QX--xLH9_1rj95t1BMA"
+			},
+			{
+				"name": "Connection",
+				"value": "keep-alive"
+			},
+			{
+				"name": "Content-Length",
+				"value": "677"
+			},
+			{
+				"name": "content-type",
+				"value": "application/json"
+			},
+			{
+				"name": "DNT",
+				"value": "1"
+			},
+			{
+				"name": "Host",
+				"value": "gql-realtime-2.reddit.com"
+			},
+			{
+				"name": "Origin",
+				"value": "https://garlic-bread.reddit.com"
+			},
+			{
+				"name": "Referer",
+				"value": "https://garlic-bread.reddit.com/"
+			},
+			{
+				"name": "Sec-Fetch-Dest",
+				"value": "empty"
+			},
+			{
+				"name": "Sec-Fetch-Mode",
+				"value": "cors"
+			},
+			{
+				"name": "Sec-Fetch-Site",
+				"value": "same-site"
+			},
+			{
+				"name": "TE",
+				"value": "trailers"
+			},
+			{
+				"name": "User-Agent",
+				"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
+			}
+		]
+	}
+}

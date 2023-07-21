@@ -1,0 +1,17 @@
+{
+  "operationName": "pixelHistory",
+  "variables": {
+    "input": {
+      "actionName": "r/replace:get_tile_history",
+      "PixelMessageData": {
+        "coordinate": {
+          "x": 345,
+          "y": 92
+        },
+        "colorIndex": 0,
+        "canvasIndex": 4
+      }
+    }
+  },
+  "query": "mutation pixelHistory($input: ActInput!) {\n  act(input: $input) {\n    data {\n      ... on BasicMessage {\n        id\n        data {\n          ... on GetTileHistoryResponseMessageData {\n            lastModifiedTimestamp\n            userInfo {\n              userID\n              username\n              __typename\n            }\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n"
+}

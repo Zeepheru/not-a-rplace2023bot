@@ -1,0 +1,17 @@
+{
+  "operationName": "setPixel",
+  "variables": {
+    "input": {
+      "actionName": "r/replace:set_pixel",
+      "PixelMessageData": {
+        "coordinate": {
+          "x": 345,
+          "y": 92
+        },
+        "colorIndex": 27,
+        "canvasIndex": 4
+      }
+    }
+  },
+  "query": "mutation setPixel($input: ActInput!) {\n  act(input: $input) {\n    data {\n      ... on BasicMessage {\n        id\n        data {\n          ... on GetUserCooldownResponseMessageData {\n            nextAvailablePixelTimestamp\n            __typename\n          }\n          ... on SetPixelResponseMessageData {\n            timestamp\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n"
+}
