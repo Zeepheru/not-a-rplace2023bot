@@ -612,20 +612,39 @@ def bot_exit(exitcode):
 
 if __name__ == '__main__':
     """
-    
+    python main.py -p [username] [password] -t [token] -am token
 
     """
+    # manual arg input
+    test_args = []
+
     # initialisation from commandline
     import argparse
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--plain", nargs=2)
-    parser.add_argument("-t", "--token", nargs=1)
-    parser.add_argument("-px", "--proxy", nargs=1)
-    parser.add_argument("-nsp", "--nosetpixels", action="store_true")
 
-    parser.add_argument("--template", nargs="?", default='mlp')
+    parser.add_argument("-p", "--plain", 
+                        nargs=2, help=""
+                        )
+    parser.add_argument("-t", "--token", 
+                        nargs=1, help="Specify session token."
+                        )
+    parser.add_argument("-px", "--proxy", 
+                        nargs=1, help="Specify proxy server address. Not in use. "
+                        )
+    parser.add_argument("-nsp", "--nosetpixels", 
+                        action="store_true", help="(Flag) Disable pixel setting."
+                        )
+    parser.add_argument("-am", "--authmethod", 
+                        nargs="?", default="token", 
+                        help="Specify the authentication method: [token (default), login]"
+                        )
+    parser.add_argument("--template", nargs="?", 
+                        default='mlp', 
+                        help="Specify the reference template to be used. Can only be set to 'mlp' (default)"
+                        ) 
 
+    args = parser.parse_args(test_args) # manual debug mode
     args = parser.parse_args()
 
     cliBotConfig = CLIBotConfig()
@@ -656,11 +675,14 @@ if __name__ == '__main__':
             else:
                 cliBotConfig.username, cliBotConfig.password = login1.split(" ")[:2]
 
-            
-
         else:
             log.critical("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
             bot_exit(1)
+
+    # auth mode
+    if cliBotConfig.session_token is None:
+        args.authmethod = "login"
+    cliBotConfig.authmethod = args.authmethod
 
     # template
     cliBotConfig.template = args.template
@@ -693,12 +715,12 @@ if __name__ == '__main__':
                 place = init_webclient(botConfig)
             
 
-            for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting
+            for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting 
                 time.sleep(1)
             
             try:
                 updateTemplate() #working
-                updateCanvasState([0, 1, 2, 3, 4, 5])
+                updateCanvasState(CURRENT_CANVASES)
                 timestampOfPlaceAttempt = AttemptPlacement(place)
 
             except WebSocketConnectionClosedException:
@@ -710,7 +732,7 @@ if __name__ == '__main__':
                 log.critical("\a-------------------------------\nBOT BANNED FROM R/PLACE\nPlease generate a new account and rerun.")
                 bot_exit(2)
             
-            time.sleep(5)
+            time.sleep(random.uniform(3, 5))
 
         except KeyboardInterrupt:
             log.critical('KeyboardInterrupt: Exiting Application')
