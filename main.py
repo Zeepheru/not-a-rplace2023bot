@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-# adopted from https://github.com/CloudburstSys/PonyPixel
+# adopted from https://github.com/CloudburstSys/PonyPixel :)
+# Warcrimes baby
 
 import math
 from traceback import print_exc
@@ -27,31 +28,33 @@ import os
 
 from main_vars import *
 from main_utils import *
+from buckets import *
 import bot_logger 
 
 ######## 
-VERSION = "0.6.1"
+VERSION = "0.7.0"
 
+# config
 CURRENT_CANVASES = [0,1,2,3,4,5]
+template_offset = (500, 500)
+modeSetPixels = True
+
 ######## 
-global start_time, pixels_placed_count
+global start_time, pixels_placed_count, template_size
 start_time = time.time()
 pixels_placed_count = 0
+template_size = (0,0)
+rgb_colors_array = []
 
 ## load logger
 global log
 log = bot_logger.setupLogger(consolelevel="info", enableLogFile=True)
-
 ##
 
 max_x = int(max(xoffset+xsize for xoffset, xsize in zip(CANVAS_XOFFSET, CANVAS_XSIZE)))
 max_y = int(max(yoffset+ysize for yoffset, ysize in zip(CANVAS_YOFFSET, CANVAS_YSIZE)))
 currentData = np.zeros([max_x, max_y, 4], dtype=np.uint8) # should hold current state of canvas at all times
 
-SET_PIXEL_QUERY = \
-    """mutation setPixel($input: ActInput!) {\n  act(input: $input) {\n    data {\n      ... on BasicMessage {\n        id\n        data {\n          ... on GetUserCooldownResponseMessageData {\n            nextAvailablePixelTimestamp\n            __typename\n          }\n          ... on SetPixelResponseMessageData {\n            timestamp\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n"""
-
-rgb_colors_array = []
 
 def init_rgb_colors_array(ref_color_map):
     global rgb_colors_array
@@ -60,7 +63,6 @@ def init_rgb_colors_array(ref_color_map):
     for color_hex, color_index in ref_color_map.items():
         rgb_array = ImageColor.getcolor(color_hex, "RGBA")
         rgb_colors_array.append(rgb_array)
-
 
 init_rgb_colors_array(ref_color_map=COLOR_MAP_FULL)
 
@@ -109,13 +111,13 @@ def setRPlaceTemplate(templateName):
     rPlaceTemplateName = templateName
     rPlaceTemplate = template
 
-def enlargenImage(im):
+def enlargenImage(im, offset):
     # basically a botch function to enlargen the size of the template image to that of a full potential board. 
     ### MODE 1 ### (half of 1 and 4)
 
     full_transp_im = Image.new("RGBA", (max_x, max_y), (0,0,0,0))
-    x_pos = 500
-    y_pos = 500
+    x_pos = offset[0]
+    y_pos = offset[1]
 
     full_transp_im.paste(im, (x_pos, y_pos))
     # full_transp_im.show()
@@ -130,9 +132,19 @@ def fetchTemplate(url):
     # print(type(im))
     im = BytesIO(response.content)
     im = Image.open(im)
+
+    ### TODO Currently checks template for different size from prev, if so quits bot to avoid template-canvas mismatch
+    global template_size
+    if template_size == (0,0):
+        # initial update
+        template_size = im.size # udpate size
+    elif template_size != im.size:
+        log.critical("Template size changed. Exiting bot...")
+        bot_exit(6)
+    
     im = im.convert("RGBA")
 
-    im = enlargenImage(im)
+    im = enlargenImage(im, offset=template_offset)
     # print(im.size)
     im.save("template_test.png")
     
@@ -164,114 +176,6 @@ def updateTemplate():
         except Exception as err:
             print_exc()
             print("Error updating mask:\n", err)
-
-
-#
-# Pick a pixel from a list of buckets
-#
-# The `position` argument is the position in the virtual pool to be selected.  See the
-# docs for `selectRandomPixelWeighted` for information on what this is hand how it
-# works
-#
-# @param {Map<number, [number, number][]>} buckets
-# @param {number} position
-# @return {[number, number]}
-#
-def pickFromBuckets(buckets: Dict[int, List], position):
-    # All of the buckets, sorted in order from highest priority to lowest priority
-    orderedBuckets = [*buckets.items()] # Convert map to array of tuples
-    orderedBuckets = sorted(orderedBuckets, key=lambda x: x[0]) # Order by key (priority) ASC
-    orderedBuckets = reversed(orderedBuckets) # Order by key (priority) DESC
-    orderedBuckets = [l for k, l in orderedBuckets] # Drop the priority, leaving an array of buckets
-    
-    # list[list[(x: int, y: int)]], inside each bucket is a [x, y] coordinate.
-    # Each bucket corresponds to a different prority level.
-    
-    # Select the position'th element from the buckets
-    for bucket in orderedBuckets:
-        if len(bucket) <= position:
-            position -= len(bucket)
-        else:
-            return bucket[position]
-    
-    # If for some reason this breaks, just return a random pixel from the largest bucket
-    largestBucket = orderedBuckets[orderedBuckets.index(max(len(b) for b in orderedBuckets))]
-    return random.choice(largestBucket)
-
-FOCUS_AREA_SIZE = 75
-#
-# Select a random pixel weighted by the mask.
-#
-# The selection algorithm works as follows:
-# - Pixels are grouped into buckets based on the mask
-# - A virtual pool of {FOCUS_AREA_SIZE} of the highest priority pixels is defined.
-#   - If the highest priority bucket contains fewer than FOCUS_AREA_SIZE pixels, the
-#     next highest bucket is pulled from, and so on until the $FOCUS_AREA_SIZE pixel
-#     threshold is met.
-# - A pixel is picked from this virtual pool without any weighting
-#
-# This algorithm avoids the collision dangers of only using one bucket, while requiring
-# no delays, and ensures that the size of the selection pool is always constant.
-#
-# Another way of looking at this:
-# - If >= 75 pixels are missing from the crystal, 100% of the bots will be working there
-# - If 50 pixels are missing from the crystal, 67% of the bots will be working there
-# - If 25 pixels are missing from the crystal, 33% of the bots will be working there
-#
-# @param {[number, number][]} diff
-# @return {[number, number]}
-#
-def selectRandomPixelWeighted(diff):
-    # Build the buckets
-    buckets = {}
-    totalAvailablePixels = 0
-    for coords in diff:
-        (x, y) = coords
-        maskValue = int(maskData[x, y, 1]) # brightness of mask coresponds to priority
-        if maskValue == 0: continue # zero priority = ignore
-        
-        totalAvailablePixels += 1
-        bucket = buckets.get(maskValue, None)
-        if bucket is None:
-            buckets[maskValue] = [coords]
-        else:
-            bucket.append(coords)
-    
-    # Select from buckets
-    # Position represents the index in the virtual pool that we are selecting
-    position = math.floor(random.random() * min([FOCUS_AREA_SIZE, totalAvailablePixels]))
-    pixel = pickFromBuckets(buckets, position)
-    return pixel
-
-#
-# Select a random pixel.
-#
-# @param {[number, number][]} diff
-# @return {{x: number, y: number}}
-#
-def selectRandomPixel(diff):
-    if rPlaceTemplate['maskUrl'] is None or maskData is None:
-        pixel = random.choice(diff)
-    else:
-        pixel = selectRandomPixelWeighted(diff)
-    
-    (x, y) = pixel
-    return x, y
-
-
-def rgb_to_hex(rgb):
-    return ("#%02x%02x%02x%02x" % rgb).upper()
-
-def closest_color(target_rgb, rgb_colors_array_in):
-    # function to find the closest rgb color from palette to a target rgb color
-    r, g, b, a = target_rgb
-    color_diffs = []
-    for color in rgb_colors_array_in:
-        cr, cg, cb, _ = color
-        color_diff = math.sqrt((float(r) - cr) ** 2 + (float(g) - cg) ** 2 + (float(b) - cb) ** 2)
-        color_diffs.append((color_diff, color))
-    return min(color_diffs, key=lambda x: x[0])[1]
-
 
 def visualizeDiff(diff):
     blank_white = Image.new("RGBA", (max_x, max_y), (255,255,255,255))
@@ -328,6 +232,10 @@ class CLIBotConfig:
     session_token = None
     template = "mlp"
     modeSetPixels = True
+
+    proxy = None
+
+    authmethod = "token"
 
 class Placer:
     REDDIT_URL = "https://www.reddit.com"
@@ -523,7 +431,7 @@ class Placer:
             log.critical("self.token is None.")
             bot_exit(3)
 
-        rl_mode = 0 # hack to tell external code whether pixel placement is successful
+        rl_mode = 0 # hacky method of telling external code whether pixel placement is successful
 
         headers = self.INITIAL_HEADERS.copy()
         headers.update({
@@ -536,6 +444,7 @@ class Placer:
             "authorization"               : "Bearer " + str(self.token)
         })
 
+        # da set pixel post
         r = requests.post("https://gql-realtime-2.reddit.com/query",
                           json={
                               "operationName": "setPixel",
@@ -649,20 +558,18 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
 def init_webclient(botConfig):
     place = Placer(modeSetPixels = botConfig.modeSetPixels)
 
-    if botConfig.username is not None:
+    if botConfig.authmethod == "login":
         place.login(botConfig.username, botConfig.password)
-    else:
+    elif botConfig.authmethod == "token":
         place.login_token(botConfig.session_token)
         log.debug(f"Set token: {botConfig.session_token}")
 
     return place
 
-
 def updateTemplateState(templateName: str):
     setRPlaceTemplate(templateName) # set current Template to "mlp" (the default)
     # python not async so must manually call updateTemplate() periodically
     updateTemplate()
-
 
 def updateCanvasState(ids: Union[int, List[int]]):
     global currentData
@@ -701,13 +608,24 @@ def bot_exit(exitcode):
 
     exit(exitcode)
 
+
+
 if __name__ == '__main__':
+    """
+    
+
+    """
+    # initialisation from commandline
     import argparse
     
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--plain", nargs=2)
     parser.add_argument("-t", "--token", nargs=1)
+    parser.add_argument("-px", "--proxy", nargs=1)
+    parser.add_argument("-nsp", "--nosetpixels", action="store_true")
+
     parser.add_argument("--template", nargs="?", default='mlp')
+
     args = parser.parse_args()
 
     cliBotConfig = CLIBotConfig()
@@ -715,36 +633,48 @@ if __name__ == '__main__':
     if args.plain is not None:
         cliBotConfig.username = args.plain[0]
         cliBotConfig.password = args.plain[1]
-    elif args.token is not None:
+
+    if args.token is not None:
         cliBotConfig.session_token = args.token[0]
-    else:
+    
+    if args.plain and args.token == None:
         # loading from logins.txt (TEMP SOUTION)
-        # loads username and pw
+        # loads username, pw, and optionally, a token
         if os.path.exists("logins.txt"):
+            # text file loading
+            log.info(f'Auth args not provided, attempting loading from file.')
+
             with open("logins.txt", "r") as f:
                 logins = f.readlines()
 
-            login1 = logins[0]
-            cliBotConfig.username, cliBotConfig.password = login1.split(" ")[:2]
+            logins_parsed = [login for login in logins if not login.startswith("#")] # remove comments. 
 
-            log.info(f'Auth args not provided, loading from file.')
+            login1 = logins_parsed[0]
+            if len(login1) == 3:
+                # token given as well
+                cliBotConfig.username, cliBotConfig.password, cliBotConfig.session_token = login1.split(" ")
+            else:
+                cliBotConfig.username, cliBotConfig.password = login1.split(" ")[:2]
+
+            
 
         else:
             log.critical("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
             bot_exit(1)
 
+    # template
     cliBotConfig.template = args.template
 
     ## DEBUG
-    cliBotConfig.modeSetPixels = True
+    if args.nosetpixels:
+        modeSetPixels = False
+    cliBotConfig.modeSetPixels = modeSetPixels
+
     if not cliBotConfig.modeSetPixels:
         log.warning("DEBUG MODE. BOT WILL NOT SET PIXELS TO AVOID UNNECESSARY API CALLS.")
     ##
 
 
-    #### TESTING TOKEN INPUT INSTEAD OF LOGIN ####
-    # cliBotConfig.username, cliBotConfig.password = None, None
-    # cliBotConfig.session_token = ""
 
     # hmmmmm
     botConfig = cliBotConfig
@@ -755,18 +685,13 @@ if __name__ == '__main__':
     timestampOfPlaceAttempt = 0
     time_to_wait = 0
     need_init = False
+
     while True:
         try:
             if need_init:
+                # this is in place
                 place = init_webclient(botConfig)
             
-            #upstreamVersion = urllib.request.urlopen('https://CloudburstSys.github.io/place.conep.one/version.txt?t={}'.format(time.time())).read().decode("utf-8").replace("\n", "")
-
-            #if(VERSION != upstreamVersion):
-                # Out of date!
-            #    print("-------------------------------\nHello. Thanks for running our MLP r/place Python bots (PonyPixel).\nThese bots are now non-functional as r/place is over.\nWe succeeded. You can run `python checkDamage.py` to see the final damage levels.\nI recommend uninstalling PonyPixel now as it serves no purpose...\nUnless you wish to deconstruct it and learn Python.\nI have a donation link at https://ko-fi.com/cloudburstsys if you want to donate to me, however it is not required\nThank you soldier. Pony on.")
-            #    print("\a-------------------------------\nBOT IS OUT OF DATE!\nPlease repull the bot (git pull) and restart your bots.")
-            #    bot_exit(3)
 
             for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting
                 time.sleep(1)
@@ -786,13 +711,15 @@ if __name__ == '__main__':
                 bot_exit(2)
             
             time.sleep(5)
+
         except KeyboardInterrupt:
             log.critical('KeyboardInterrupt: Exiting Application')
             bot_exit(0)
             break
+
         except Exception as err:
             print("-------------------------------")
             print_exc() # print stack trace
-            log.critical("-------------------------------\nNON-TERMINAL ERROR ENCOUNTERED\nBot is reviving. Please wait...")
+            log.critical("-------------------------------\nNON-TERMINAL ERROR ENCOUNTERED\nBot is reviving. Please wait 15 seconds...")
             time.sleep(15)
             need_init = True

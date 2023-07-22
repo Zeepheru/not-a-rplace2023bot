@@ -1,4 +1,19 @@
 import time
+import math
+
+def rgb_to_hex(rgb):
+    return ("#%02x%02x%02x%02x" % rgb).upper()
+
+def closest_color(target_rgb, rgb_colors_array_in):
+    # function to find the closest rgb color from palette to a target rgb color
+    r, g, b, a = target_rgb
+    color_diffs = []
+    for color in rgb_colors_array_in:
+        cr, cg, cb, _ = color
+        color_diff = math.sqrt((float(r) - cr) ** 2 + (float(g) - cg) ** 2 + (float(b) - cb) ** 2)
+        color_diffs.append((color_diff, color))
+    return min(color_diffs, key=lambda x: x[0])[1]
+
 
 def get_time_passed(start_time):
     time_passed = time.time() - start_time

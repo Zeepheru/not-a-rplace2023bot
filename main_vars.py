@@ -10,6 +10,8 @@ CANVAS_XSIZE   = [1000, 1000, 1000, 1000, 1000, 1000]
 CANVAS_YSIZE   = [1000, 1000, 1000, 1000, 1000, 1000]
 CanvasIdMap = None
 
+SET_PIXEL_QUERY = \
+    """mutation setPixel($input: ActInput!) {\n  act(input: $input) {\n    data {\n      ... on BasicMessage {\n        id\n        data {\n          ... on GetUserCooldownResponseMessageData {\n            nextAvailablePixelTimestamp\n            __typename\n          }\n          ... on SetPixelResponseMessageData {\n            timestamp\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n"""
 
 
 # color
