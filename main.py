@@ -223,6 +223,15 @@ def getDiff(currentData, templateData):
     log.info(f'Total Damage: {len(diff) / (templateData[:, :, 3] != 0.0).sum():.1%} | {len(diff)}/{(templateData[:, :, 3] != 0.0).sum()}')
     return diff
 
+def selectRandomPixel(diff):
+    if rPlaceTemplate['maskUrl'] is None or maskData is None:
+        pixel = random.choice(diff)
+    else:
+        pixel = selectRandomPixelWeighted(diff)
+    
+    (x, y) = pixel
+    return x, y
+
 ###########################
 
 class CLIBotConfig:
@@ -686,7 +695,7 @@ if __name__ == '__main__':
 
     # template
     cliBotConfig.template = args.template
-    
+
     ## DEBUG
     if args.nosetpixels:
         modeSetPixels = False
