@@ -736,7 +736,7 @@ if __name__ == '__main__':
     cliBotConfig.template = args.template
 
     ## DEBUG
-    cliBotConfig.modeSetPixels = False
+    cliBotConfig.modeSetPixels = True
     if not cliBotConfig.modeSetPixels:
         log.warning("DEBUG MODE. BOT WILL NOT SET PIXELS TO AVOID UNNECESSARY API CALLS.")
     ##
