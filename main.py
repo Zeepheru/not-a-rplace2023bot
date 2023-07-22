@@ -32,7 +32,7 @@ import bot_logger
 ######## 
 VERSION = "0.6.1"
 
-CURRENT_CANVASES = [1,4]
+CURRENT_CANVASES = [0,1,2,3,4,5]
 ######## 
 global start_time, pixels_placed_count
 start_time = time.time()
@@ -114,7 +114,7 @@ def enlargenImage(im):
     ### MODE 1 ### (half of 1 and 4)
 
     full_transp_im = Image.new("RGBA", (max_x, max_y), (0,0,0,0))
-    x_pos = 1000
+    x_pos = 500
     y_pos = 500
 
     full_transp_im.paste(im, (x_pos, y_pos))
@@ -279,7 +279,7 @@ def visualizeDiff(diff):
     for x,y in diff:
         blank_white.putpixel((x, y), (255, 0, 0, 255)) # ff0000
 
-    # blank_white.show()
+    blank_white.show()
 
 def getDiff(currentData, templateData):
 
@@ -314,7 +314,7 @@ def getDiff(currentData, templateData):
             # print(curr_pixel[:3], temp_pixel[:3], x, y)
             diff.append([x, y])
 
-    visualizeDiff(diff) # for visualizing the error pixels, error pixels are marked in red. 
+    # visualizeDiff(diff) # for visualizing the error pixels, error pixels are marked in red. 
     
     log.info(f'Total Damage: {len(diff) / (templateData[:, :, 3] != 0.0).sum():.1%} | {len(diff)}/{(templateData[:, :, 3] != 0.0).sum()}')
     return diff
@@ -633,7 +633,8 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
             if rl_mode == 0:
                 global pixels_placed_count
                 # no rate limit
-                timestampOfSafePlace += random.uniform(1,5)
+                timestampOfSafePlace += random.uniform(2,10)
+
                 log.info(f"Placed Pixel '{COLOR_NAMES_MAP.get(hex_color, hex_color)}' at [{x-1500}, {y-1000}]. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
                 pixels_placed_count += 1
 
@@ -652,6 +653,7 @@ def init_webclient(botConfig):
         place.login(botConfig.username, botConfig.password)
     else:
         place.login_token(botConfig.session_token)
+        log.debug(f"Set token: {botConfig.session_token}")
 
     return place
 
@@ -717,6 +719,7 @@ if __name__ == '__main__':
         cliBotConfig.session_token = args.token[0]
     else:
         # loading from logins.txt (TEMP SOUTION)
+        # loads username and pw
         if os.path.exists("logins.txt"):
             with open("logins.txt", "r") as f:
                 logins = f.readlines()
@@ -733,10 +736,15 @@ if __name__ == '__main__':
     cliBotConfig.template = args.template
 
     ## DEBUG
-    cliBotConfig.modeSetPixels = True
+    cliBotConfig.modeSetPixels = False
     if not cliBotConfig.modeSetPixels:
         log.warning("DEBUG MODE. BOT WILL NOT SET PIXELS TO AVOID UNNECESSARY API CALLS.")
     ##
+
+
+    #### TESTING TOKEN INPUT INSTEAD OF LOGIN ####
+    # cliBotConfig.username, cliBotConfig.password = None, None
+    # cliBotConfig.session_token = ""
 
     # hmmmmm
     botConfig = cliBotConfig
