@@ -7,7 +7,6 @@ temp
 
 # sensitive
 *.txt
-!requirements.txt
 auth.json
 notes.md
 
@@ -17,3 +16,7 @@ notes.md
 commands.txt
 logins.txt
 proxy_tester.py
+
+# exceptions
+!requirements.txt
+!proxy_commands.txt
