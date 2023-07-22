@@ -1,0 +1,8 @@
+requests
+beautifulsoup4
+pillow
+html5lib
+numpy
+websocket-client
+tqdm
+pysocks

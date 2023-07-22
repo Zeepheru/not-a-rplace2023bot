@@ -48,7 +48,7 @@ rgb_colors_array = []
 
 ## load logger
 global log
-log = bot_logger.setupLogger(consolelevel="info", enableLogFile=True)
+log = bot_logger.setupLogger(consolelevel="debug", enableLogFile=True)
 ##
 
 max_x = int(max(xoffset+xsize for xoffset, xsize in zip(CANVAS_XOFFSET, CANVAS_XSIZE)))
@@ -686,6 +686,9 @@ if __name__ == '__main__':
 
     # template
     cliBotConfig.template = args.template
+
+    log.info("testing complete. ")
+    bot_exit(0)
 
     ## DEBUG
     if args.nosetpixels:

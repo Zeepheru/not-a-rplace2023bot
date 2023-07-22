@@ -7,6 +7,6 @@ COPY ./* .
 RUN pip install -r requirements.txt
 
 # make sure all files available??
-RUN ls .
+# RUN ls .
 
-CMD ["python", "./main.py"]
+ENTRYPOINT ["python", "./main.py"]
