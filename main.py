@@ -686,10 +686,7 @@ if __name__ == '__main__':
 
     # template
     cliBotConfig.template = args.template
-
-    log.info("testing complete. ")
-    bot_exit(0)
-
+    
     ## DEBUG
     if args.nosetpixels:
         modeSetPixels = False
