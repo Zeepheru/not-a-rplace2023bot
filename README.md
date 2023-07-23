@@ -25,17 +25,15 @@ ENV
 `HTTPS_PROXY`
 
 ## Exit Codes
-`0` - **Errors that mean an account ban / ratelimit / authentication issue:**
-- Full ratelimit ban 
-- Web socket auth refused
-- Placing user auth error
-- Login auth error
+`0-9` - **Errors that mean an account ban / ratelimit / authentication issue:**
+- `0`- Full ratelimit ban 
+- `1`- Web socket auth refused
+- `2`- Placing user auth error
+- `4`- Login auth error
 
-`0` - **(Non-critical) Non-restart exit codes:**
-- Time limit
-
-`1-9` - **Expected errors:**
-- `1` - Keyboard interrupt
+`10-19` - **Expected errors:**
+- `10` - Time limit
+- `11` - Keyboard interrupt
 
 `10-19` - **Code / input errors:**
 - `10` - No token provided

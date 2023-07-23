@@ -140,7 +140,7 @@ def fetchTemplate(url):
         template_size = im.size # udpate size
     elif template_size != im.size and template_offset != (0,0):
         log.critical("Template size changed. Exiting bot...")
-        bot_exit(30)
+        bot_exit(40)
     elif template_size != im.size:
         log.warning("Template size changed but not likely to affect alignment. ")
     
@@ -441,7 +441,7 @@ class Placer:
         if not self.token:
             # this happened once, so here's something to catch it.
             log.critical("self.token is None.")
-            bot_exit(10)
+            bot_exit(20)
 
         rl_mode = 0 # hacky method of telling external code whether pixel placement is successful
 
@@ -479,7 +479,7 @@ class Placer:
         
         if r.status_code != 200:
             log.critical("Pixel placement status code not 200: " + str(r.status_code))
-            bot_exit(20)
+            bot_exit(30)
 
         try:
             if r.json()["data"] is None:
@@ -500,10 +500,10 @@ class Placer:
                 log.critical(r.json())
                 log.critical("\nOther form of error encountered while setting pixel. Exiting...")
                 log.critical("Likely due to a user auth error. Please obtain a new session token. ")
-                bot_exit(0)
+                bot_exit(2)
             else:
                 log.critical("\nOther form of error encountered while setting pixel. No valid error response. Exiting...")
-                bot_exit(21)
+                bot_exit(31)
         
         return waitTimems / 1000, rl_mode
 
@@ -696,7 +696,7 @@ if __name__ == '__main__':
 
         else:
             log.critical("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
-            bot_exit(11)
+            bot_exit(21)
 
     # auth mode
     if cliBotConfig.session_token is None:
@@ -738,7 +738,7 @@ if __name__ == '__main__':
             if botConfig.duration != None:
                 if time.time() - start_time + time_to_wait > botConfig.duration:
                     log.warning(f"\nSpecified duration of {botConfig.duration} seconds is up/will be up. Exiting...")
-                    bot_exit(0)
+                    bot_exit(10)
 
             for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting 
                 time.sleep(1)
@@ -750,7 +750,7 @@ if __name__ == '__main__':
 
             except WebSocketConnectionClosedException:
                 log.critical("\aWebSocket connection refused. Auth issue.")
-                bot_exit(0)
+                bot_exit(1)
             
             time_to_wait = timestampOfPlaceAttempt - time.time()
             if time_to_wait > DAY:
@@ -761,7 +761,7 @@ if __name__ == '__main__':
 
         except KeyboardInterrupt:
             log.critical('\nKeyboardInterrupt: Exiting...')
-            bot_exit(1)
+            bot_exit(11)
             break
 
         except Exception as err:
