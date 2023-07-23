@@ -30,6 +30,10 @@ def setupLogger(enableLogFile: bool, consolelevel = "debug"):
     if not os.path.exists("logs"):
         os.makedirs("logs")
 
+    #current logs. 
+    if os.path.exists("logs/currentlogs.txt"):
+        os.remove("logs/currentlogs.txt")
+
     logger = logging.getLogger("main")
     logger.setLevel(level=logging.DEBUG)
 
@@ -51,10 +55,15 @@ def setupLogger(enableLogFile: bool, consolelevel = "debug"):
     fH = logging.FileHandler(filename="logs/"+c_time+".txt")
     fH.setLevel(logging.DEBUG)
     fH.setFormatter(fullformat)
+    #currentlogs.txt
+    fH2 = logging.FileHandler(filename="logs/"+"currentlogs"+".txt")
+    fH2.setLevel(logging.DEBUG)
+    fH2.setFormatter(fullformat)
 
     logger.addHandler(cH)
     if enableLogFile:
         logger.addHandler(fH)
+        logger.addHandler(fH2)
 
     return logger
 
