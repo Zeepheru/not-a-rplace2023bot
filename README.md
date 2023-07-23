@@ -35,16 +35,16 @@ ENV
 - `10` - Time limit
 - `11` - Keyboard interrupt
 
-`10-19` - **Code / input errors:**
-- `10` - No token provided
-- `11` - Auth credentials not provided
+`20-29` - **Code / input errors:**
+- `20` - No token provided
+- `21` - Auth credentials not provided
 
-`20-29` - **Misc errors, revivable:**
-- `20` - Non 200 pixel placement code
-- `21` - Non-error pixel placement response
+`30-39` - **Misc errors, revivable:**
+- `30` - Non 200 pixel placement code
+- `31` - Non-error pixel placement response
 
-`30-39` - **Other errors that should not be reattempted, but will result in a restart anyway:**
-- `30` - Template size change *(disabled after top left corner reached)*
+`40-49` - **Other errors that should not be reattempted, but will result in a restart anyway:**
+- `40` - Template size change *(disabled after top left corner reached)*
 
 
 `137` - Portainer Specific, container manually stopped via Portainer.
