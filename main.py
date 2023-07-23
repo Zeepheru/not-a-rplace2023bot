@@ -662,7 +662,7 @@ if __name__ == '__main__':
 
     cliBotConfig = CLIBotConfig()
 
-    print(args.plain)
+    # print(args.plain)
 
     if args.plain is not None:
         cliBotConfig.username = args.plain[0]
