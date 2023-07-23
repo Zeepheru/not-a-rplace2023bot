@@ -36,7 +36,7 @@ VERSION = "0.7.0"
 
 # config
 CURRENT_CANVASES = [0,1,2,3,4,5]
-template_offset = (500, 500)
+template_offset = (500, 0)
 modeSetPixels = True
 
 ######## 
