@@ -243,6 +243,7 @@ class CLIBotConfig:
     modeSetPixels = True
 
     proxy = None
+    duration = None
 
     authmethod = "token"
 
@@ -641,6 +642,9 @@ if __name__ == '__main__':
     parser.add_argument("-px", "--proxy", 
                         nargs=1, help="Specify proxy server address. Not in use. "
                         )
+    parser.add_argument("-dt", "--duration",
+                        type=int, help="Add bot duration in seconds. Will exit after duration has passed. "
+                        )
     parser.add_argument("-nsp", "--nosetpixels", 
                         action="store_true", help="(Flag) Disable pixel setting."
                         )
@@ -658,6 +662,8 @@ if __name__ == '__main__':
 
     cliBotConfig = CLIBotConfig()
 
+    print(args.plain)
+
     if args.plain is not None:
         cliBotConfig.username = args.plain[0]
         cliBotConfig.password = args.plain[1]
@@ -665,7 +671,7 @@ if __name__ == '__main__':
     if args.token is not None:
         cliBotConfig.session_token = args.token[0]
     
-    if args.plain and args.token == None:
+    if args.plain == None and args.token == None:
         # loading from logins.txt (TEMP SOUTION)
         # loads username, pw, and optionally, a token
         if os.path.exists("logins.txt"):
@@ -705,6 +711,7 @@ if __name__ == '__main__':
         log.warning("DEBUG MODE. BOT WILL NOT SET PIXELS TO AVOID UNNECESSARY API CALLS.")
     ##
 
+    cliBotConfig.duration = args.duration
 
 
     # hmmmmm
@@ -723,6 +730,11 @@ if __name__ == '__main__':
                 # this is in place
                 place = init_webclient(botConfig)
             
+            # checks uptime, closes if exceeded
+            if botConfig.duration != None:
+                if time.time() - start_time + time_to_wait > botConfig.duration:
+                    log.warning(f"\nSpecified duration of {botConfig.duration} seconds is up/will be up. Exiting...")
+                    bot_exit(0)
 
             for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting 
                 time.sleep(1)
@@ -744,7 +756,7 @@ if __name__ == '__main__':
             time.sleep(random.uniform(3, 5))
 
         except KeyboardInterrupt:
-            log.critical('KeyboardInterrupt: Exiting Application')
+            log.critical('\nKeyboardInterrupt: Exiting...')
             bot_exit(0)
             break
 
