@@ -547,6 +547,8 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
         if not place.modeSetPixels:
             log.warning("Pixel not placed due to debug mode.")
 
+            return time.time() + random.uniform(12, 43) # increased ping interval
+
         else:
             timestampOfSafePlace, rl_mode = place.place_tile(int(canvas_id), cx, cy, int(COLOR_MAP[hex_color])) # and convert hex_color to color ID for request
             
