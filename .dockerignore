@@ -1,0 +1,10 @@
+env
+logs
+ref
+test_images
+
+.git
+.gitignore
+*.png
+
+proxy_commands.txt

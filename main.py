@@ -616,6 +616,7 @@ def updateCanvasState(ids: Union[int, List[int]]):
 def bot_exit(exitcode):
     # to gracefully exit this thing.
     uptime = get_time_passed(start_time)
+    log.info(f"Exit code: {exitcode}")
     log.info(f"Uptime: {uptime}")
     log.info(f"Pixels placed: {pixels_placed_count}")
 
