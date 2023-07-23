@@ -138,9 +138,11 @@ def fetchTemplate(url):
     if template_size == (0,0):
         # initial update
         template_size = im.size # udpate size
-    elif template_size != im.size:
+    elif template_size != im.size and template_offset != (0,0):
         log.critical("Template size changed. Exiting bot...")
-        bot_exit(6)
+        bot_exit(30)
+    elif template_size != im.size:
+        log.warning("Template size changed but not likely to affect alignment. ")
     
     im = im.convert("RGBA")
 
@@ -439,7 +441,7 @@ class Placer:
         if not self.token:
             # this happened once, so here's something to catch it.
             log.critical("self.token is None.")
-            bot_exit(3)
+            bot_exit(10)
 
         rl_mode = 0 # hacky method of telling external code whether pixel placement is successful
 
@@ -477,7 +479,7 @@ class Placer:
         
         if r.status_code != 200:
             log.critical("Pixel placement status code not 200: " + str(r.status_code))
-            bot_exit(3)
+            bot_exit(20)
 
         try:
             if r.json()["data"] is None:
@@ -497,10 +499,11 @@ class Placer:
             if r.json()["errors"]:
                 log.critical(r.json())
                 log.critical("\nOther form of error encountered while setting pixel. Exiting...")
-                bot_exit(3)
+                log.critical("Likely due to a user auth error. Please obtain a new session token. ")
+                bot_exit(0)
             else:
                 log.critical("\nOther form of error encountered while setting pixel. No valid error response. Exiting...")
-                bot_exit(3)
+                bot_exit(21)
         
         return waitTimems / 1000, rl_mode
 
@@ -692,7 +695,7 @@ if __name__ == '__main__':
 
         else:
             log.critical("\a-------------------------------\nNO AUTHENTICATION CREDENTIALS PROVIDED.\nPlease provide login credentials.")
-            bot_exit(1)
+            bot_exit(11)
 
     # auth mode
     if cliBotConfig.session_token is None:
@@ -746,18 +749,18 @@ if __name__ == '__main__':
 
             except WebSocketConnectionClosedException:
                 log.critical("\aWebSocket connection refused. Auth issue.")
-                bot_exit(1)
+                bot_exit(0)
             
             time_to_wait = timestampOfPlaceAttempt - time.time()
             if time_to_wait > DAY:
                 log.critical("\a-------------------------------\nBOT BANNED FROM R/PLACE\nPlease generate a new account and rerun.")
-                bot_exit(2)
+                bot_exit(0)
             
             time.sleep(random.uniform(3, 5))
 
         except KeyboardInterrupt:
             log.critical('\nKeyboardInterrupt: Exiting...')
-            bot_exit(0)
+            bot_exit(1)
             break
 
         except Exception as err:
