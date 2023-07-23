@@ -48,7 +48,7 @@ rgb_colors_array = []
 
 ## load logger
 global log
-log = bot_logger.setupLogger(consolelevel="info", enableLogFile=True)
+log = bot_logger.setupLogger(consolelevel="debug", enableLogFile=True)
 ##
 
 max_x = int(max(xoffset+xsize for xoffset, xsize in zip(CANVAS_XOFFSET, CANVAS_XSIZE)))
@@ -326,7 +326,7 @@ class Placer:
         log.debug("TOKEN: " + str(self.token))
 
     def login_token(self, session_token: str):
-        log.debug(session_token)
+        # log.debug(session_token)
         self.token = session_token
     
     def get_board(self):

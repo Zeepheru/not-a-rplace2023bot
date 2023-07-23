@@ -49,4 +49,6 @@ ENV
 - `30` - Template size change *(disabled after top left corner reached)*
 
 
-Max attempts of **1**. 
+`137` - Portainer Specific, container manually stopped via Portainer.
+
+~~ Max attempts of 1. ~~
