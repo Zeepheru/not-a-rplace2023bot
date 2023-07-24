@@ -823,7 +823,8 @@ if __name__ == '__main__':
     place = init_webclient(botConfig)
     setRPlaceTemplate(botConfig.template)
     
-    add_config = loadRTConfig(ini=True, nomask=botConfig.nomask, overridestoptime=botConfig.overridestoptime)
+    botConfig.additional = loadRTConfig(ini=True, nomask=botConfig.nomask, overridestoptime=botConfig.overridestoptime)
+    add_config = botConfig.additional
     end_time_cfg = add_config['time_cfg']['stop_time']
 
     updateTemplateState(botConfig.template) # HACK
@@ -848,7 +849,7 @@ if __name__ == '__main__':
 
             if end_time_cfg != 0:
                 # if 0, means no configured end time. 
-                stop_max = botConfig.additional["time_cfg"]["stop_delay_variations"]
+                stop_max = botConfig.additional["time_cfg"]["stop_delay_variance"]
                 if time.time() + time_to_wait > end_time_cfg and end_time_var_cfg == 0:
                     end_time_var_cfg = random.uniform(1, stop_max)
                     log.info(f"Configured end time reached. Randomised delay of {end_time_var_cfg:.1f} seconds generated. ")
@@ -864,7 +865,7 @@ if __name__ == '__main__':
             try:
                 add_config = loadRTConfig(ini=False, nomask = botConfig.nomask)
                 end_time_cfg = add_config['time_cfg']['stop_time']
-                
+
                 updateTemplate() #working
                 updateCanvasState(CURRENT_CANVASES)
                 timestampOfPlaceAttempt = AttemptPlacement(place)
