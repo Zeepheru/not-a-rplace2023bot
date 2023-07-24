@@ -18,6 +18,8 @@ CMD
 
 `-t [token] -am token -dt [time]`
 
+`-t [token] -am token -nsp -nm -ovst`
+
 ENV
 
 `HTTP_PROXY`

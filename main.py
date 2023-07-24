@@ -108,7 +108,7 @@ def setRPlaceTemplate(templateName):
     rPlaceTemplateName = templateName
     rPlaceTemplate = template
 
-def loadRTConfig(ini=False):
+def loadRTConfig(ini=False, nomask=False, overridestoptime=False):
     """
     Loads additional configs from my github.io
     currently a config.json plus masks
@@ -132,11 +132,20 @@ def loadRTConfig(ini=False):
         log.debug(f"JSON config loaded: {config}")
 
     # sets mask image url
-    if config['mask_cfg']["mask"]:
+    if config['mask_cfg']["mask"] and not nomask:
         mask_url = f"{url_img}/{config['mask_cfg']['mask_name']}.png"
         rPlaceTemplate['maskUrl'] = mask_url
         if ini:
             log.debug(f"Set mask url for {config['mask_cfg']['mask_name']}: {mask_url}")
+
+    # disables time limit
+    if overridestoptime:
+        config['time_cfg']['stop_time'] = 0
+        if ini:
+            log.warning("Configured stop time disabled.")
+    else:
+        if ini:
+            log.info(f"Configured stop time loaded. Bot will exit in {config['time_cfg']['stop_time']-time.time():.1f} seconds.")
     
     return config
 
@@ -257,7 +266,7 @@ def visualizeDiff(diff):
     blank_white.show()
 
 def getDiff(currentData, templateData):
-    total_tmpl_px = current_total_template_px
+    total_tmpl_px = current_total_template_px # not used at the moment
 
     ## the image vis is flipped 90 deg
     # current_img = Image.fromarray(currentData, "RGBA")
@@ -290,14 +299,12 @@ def getDiff(currentData, templateData):
             # print(curr_pixel[:3], temp_pixel[:3], x, y)
             diff.append([x, y])
 
-    visualizeDiff(diff) # for visualizing the error pixels, error pixels are marked in red. 
+    # visualizeDiff(diff) # for visualizing the error pixels, error pixels are marked in red. 
+
     total_current_px = (templateData[:, :, 3] != 0.0).sum()
-    if total_tmpl_px == 0:
-        total_tmpl_px = total_current_px
-    
-        log.info(f'Total Damage: {len(diff) / total_tmpl_px:.1%} | {len(diff)}/{total_tmpl_px}')
-    else:
-        log.info(f'Total Damage: {len(diff) / total_tmpl_px:.1%} | {len(diff)}/{total_tmpl_px}, {total_current_px} (masked)')
+    log.info(f'Total Damage: {len(diff) / total_current_px:.1%} | {len(diff)}/{total_current_px}')
+
+    # log.info(f'Total Damage: {len(diff) / total_tmpl_px:.1%} | {len(diff)}/{total_tmpl_px}, {total_current_px} (masked)')
 
 
     return diff
@@ -327,6 +334,8 @@ class CLIBotConfig:
     authmethod = "token"
 
     additional = {}
+    nomask = False
+    overridestoptime = False
 
 class Placer:
     REDDIT_URL = "https://www.reddit.com"
@@ -636,7 +645,7 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
             if rl_mode == 0:
                 global pixels_placed_count
                 # no rate limit
-                timestampOfSafePlace += random.uniform(2,11)
+                timestampOfSafePlace += random.uniform(4,12)
 
                 log.info(f"Placed Pixel '{COLOR_NAMES_MAP.get(hex_color, hex_color)}' at [{x-1500}, {y-1000}]. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
                 pixels_placed_count += 1
@@ -732,6 +741,14 @@ if __name__ == '__main__':
     parser.add_argument("-nsp", "--nosetpixels", 
                         action="store_true", help="(Flag) Disable pixel setting."
                         )
+    parser.add_argument("-nm", "--nomask", 
+                        action="store_true", default=False,
+                        help="(Flag) Disable mask."
+                        )
+    parser.add_argument("-ovst", "--overridestoptime", 
+                        action="store_true", default=False,
+                        help="(Flag) Disable configured stop time."
+                        )
     parser.add_argument("-am", "--authmethod", 
                         nargs="?", default="token", 
                         help="Specify the authentication method: [token (default), login]"
@@ -797,7 +814,8 @@ if __name__ == '__main__':
     ##
 
     cliBotConfig.duration = args.duration
-
+    cliBotConfig.nomask = args.nomask
+    cliBotConfig.overridestoptime = args.overridestoptime
 
     # hmmmmm
     botConfig = cliBotConfig
@@ -805,15 +823,16 @@ if __name__ == '__main__':
     place = init_webclient(botConfig)
     setRPlaceTemplate(botConfig.template)
     
-    loadRTConfig(ini=True)
+    loadRTConfig(ini=True, nomask=botConfig.nomask, overridestoptime=botConfig.overridestoptime)
 
     updateTemplateState(botConfig.template) # HACK
     
-    
+
     timestampOfPlaceAttempt = 0
     time_to_wait = 0
     need_init = False
 
+    ###
     while True:
         try:
             if need_init:
@@ -839,10 +858,10 @@ if __name__ == '__main__':
 
             ###
             for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting 
-                time.sleep(0.86)
+                time.sleep(random.uniform(1,2))
             
             try:
-                loadRTConfig(ini=False)
+                loadRTConfig(ini=False, nomask = botConfig.nomask)
                 updateTemplate() #working
                 updateCanvasState(CURRENT_CANVASES)
                 timestampOfPlaceAttempt = AttemptPlacement(place)
