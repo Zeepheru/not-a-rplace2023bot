@@ -40,7 +40,7 @@ template_offset = (0, 0)
 modeSetPixels = True
 
 ######## 
-global start_time, end_time_cfg, end_time_var_cfg, pixels_placed_count, template_size
+global start_time, end_time_cfg, end_time_var_cfg, pixels_placed_count, template_size, current_total_template_px
 start_time = time.time()
 end_time_cfg = 0 # both of them are done separately
 end_time_var_cfg = 0
@@ -48,6 +48,8 @@ end_time_var_cfg = 0
 pixels_placed_count = 0
 template_size = (0,0)
 rgb_colors_array = []
+
+current_total_template_px = 0 # global var for vis purposes
 
 ## load logger
 global log
@@ -153,6 +155,8 @@ def enlargenImage(im, offset):
 
 # Fetch template, returns a Promise<Uint8Array>, on error returns the response object
 def fetchTemplate(url):
+    global current_total_template_px
+
     # return unsignedInt8Array[W, H, C] of the URL
     response = requests.get(url)
     # im = urllib.request.urlopen(f'{url}?t={time.time()}').read()# load raw file
@@ -182,21 +186,21 @@ def fetchTemplate(url):
 
     if type(maskData) != type(None): # because Numpy complains if I do it the normal way
         # print(im.shape)
-
         # print(maskData.shape)
-        # print(maskData)
 
         im2 = im.copy()
-        im2[maskData < 128] = [0,0,0,0]
+        im2[np.transpose(maskData) < 128] = [0,0,0,0]
         # need to set it back to im
 
-        # im2 = Image.fromarray(im2, "RGBA")
+        # Image.fromarray(im2, "RGBA").show() # show 
+        # print(im2.shape)
         # Image.fromarray(maskData, "L").show()
         # im2.show()
         # bot_exit()
 
-
         # TEMP TEMP TEMP TEMP
+        current_total_template_px = (im[:, :, 3] != 0.0).sum()
+        del im
         assert im2.dtype == 'uint8', f'got dtype {im.dtype}, expected uint8'
         assert im2.shape[2] == 4, f'got {im.shape[2]} color channels, expected 4 (RGBA)'
         return im2
@@ -204,6 +208,7 @@ def fetchTemplate(url):
     else:
         log.debug("Mask not applied. ")
 
+    current_total_template_px = (im[:, :, 3] != 0.0).sum()
     assert im.dtype == 'uint8', f'got dtype {im.dtype}, expected uint8'
     assert im.shape[2] == 4, f'got {im.shape[2]} color channels, expected 4 (RGBA)'
     return im
@@ -252,6 +257,7 @@ def visualizeDiff(diff):
     blank_white.show()
 
 def getDiff(currentData, templateData):
+    total_tmpl_px = current_total_template_px
 
     ## the image vis is flipped 90 deg
     # current_img = Image.fromarray(currentData, "RGBA")
@@ -285,8 +291,15 @@ def getDiff(currentData, templateData):
             diff.append([x, y])
 
     visualizeDiff(diff) # for visualizing the error pixels, error pixels are marked in red. 
+    total_current_px = (templateData[:, :, 3] != 0.0).sum()
+    if total_tmpl_px == 0:
+        total_tmpl_px = total_current_px
     
-    log.info(f'Total Damage: {len(diff) / (templateData[:, :, 3] != 0.0).sum():.1%} | {len(diff)}/{(templateData[:, :, 3] != 0.0).sum()}')
+        log.info(f'Total Damage: {len(diff) / total_tmpl_px:.1%} | {len(diff)}/{total_tmpl_px}')
+    else:
+        log.info(f'Total Damage: {len(diff) / total_tmpl_px:.1%} | {len(diff)}/{total_tmpl_px}, {total_current_px} (masked)')
+
+
     return diff
 
 def selectRandomPixel(diff):
