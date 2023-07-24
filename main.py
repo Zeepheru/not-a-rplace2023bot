@@ -847,7 +847,7 @@ if __name__ == '__main__':
                     log.warning(f"\nSpecified duration of {botConfig.duration} seconds is up/will be up. Exiting...")
                     bot_exit(10)
 
-            if end_time_cfg != 0:
+            if end_time_cfg != 0 and botConfig.overridestoptime == False:
                 # if 0, means no configured end time. 
                 stop_max = botConfig.additional["time_cfg"]["stop_delay_variance"]
                 if time.time() + time_to_wait > end_time_cfg and end_time_var_cfg == 0:
