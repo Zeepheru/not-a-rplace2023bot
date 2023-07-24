@@ -14,11 +14,11 @@ misc terminal commands:
 
 CMD
 
-`-t [token] -am token`
+`'-t' '[token]' '-am' 'token'`
 
-`-t [token] -am token -dt [time]`
+`'-t' '[token]' '-am' 'token' '-dt' '[time]'`
 
-`-t [token] -am token -nsp -nm -ovst`
+`'-t' '[token]' '-am' 'token' '-nsp' '-nm' '-ovst'` (status checker mode with no mask and no termination)
 
 ENV
 
