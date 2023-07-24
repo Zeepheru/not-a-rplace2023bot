@@ -2,6 +2,7 @@ env
 logs
 ref
 test_images
+realtime_data
 
 .git
 .gitignore

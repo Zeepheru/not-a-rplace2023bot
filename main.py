@@ -195,6 +195,12 @@ def fetchTemplate(url):
         # im2.show()
         # bot_exit()
 
+
+        # TEMP TEMP TEMP TEMP
+        assert im2.dtype == 'uint8', f'got dtype {im.dtype}, expected uint8'
+        assert im2.shape[2] == 4, f'got {im.shape[2]} color channels, expected 4 (RGBA)'
+        return im2
+
     else:
         log.debug("Mask not applied. ")
 
