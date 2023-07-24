@@ -1,5 +1,10 @@
 # Yes, This is a Warcrime
-misc terminal commands:
+
+This project is not associated with the primary MLP r/place 2023 efforts whatsoever. It only makes use of the publicly available templates. 
+
+**It is exclusively a personal endeavour**
+
+### misc terminal commands:
 
 `python main.py -p [username] [password] -t [token] -am token`
 
