@@ -48,6 +48,7 @@ COLOR_MAP_FULL = {
     "#898D90FF": 29,
     "#D4D7D9FF": 30,
     "#FFFFFFFF": 31,
+    "#FFF34FFF": 32
 }
 
 COLOR_NAMES_MAP = {
@@ -83,4 +84,5 @@ COLOR_NAMES_MAP = {
     "#898D90FF": 'Grey',
     "#D4D7D9FF": 'Light Grey',
     "#FFFFFFFF": 'White',
+    "#FFF34FFF": 'this is a fucking hack and a half'
 }
