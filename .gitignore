@@ -13,10 +13,10 @@ notes.md
 # etc
 *.pdf
 *.png
+
 commands.txt
 logins.txt
 proxy_tester.py
-updatedockethub.bat
 realtime_data
 
 # exceptions

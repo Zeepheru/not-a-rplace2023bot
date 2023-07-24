@@ -125,7 +125,7 @@ def loadRTConfig(ini=False, nomask=False, overridestoptime=False):
         print_exc()
         log.warning("Attempt to obtain config.json failed.")
         bot_exit(32)
-        return
+        exit() # this is to remove a pylance error
 
     if ini:
         log.debug(json_url)
@@ -823,7 +823,8 @@ if __name__ == '__main__':
     place = init_webclient(botConfig)
     setRPlaceTemplate(botConfig.template)
     
-    loadRTConfig(ini=True, nomask=botConfig.nomask, overridestoptime=botConfig.overridestoptime)
+    add_config = loadRTConfig(ini=True, nomask=botConfig.nomask, overridestoptime=botConfig.overridestoptime)
+    end_time_cfg = add_config['time_cfg']['stop_time']
 
     updateTemplateState(botConfig.template) # HACK
     
@@ -861,7 +862,9 @@ if __name__ == '__main__':
                 time.sleep(random.uniform(1,2))
             
             try:
-                loadRTConfig(ini=False, nomask = botConfig.nomask)
+                add_config = loadRTConfig(ini=False, nomask = botConfig.nomask)
+                end_time_cfg = add_config['time_cfg']['stop_time']
+                
                 updateTemplate() #working
                 updateCanvasState(CURRENT_CANVASES)
                 timestampOfPlaceAttempt = AttemptPlacement(place)
