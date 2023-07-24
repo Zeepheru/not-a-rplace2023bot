@@ -36,12 +36,15 @@ VERSION = "0.7.0"
 
 # config
 CURRENT_CANVASES = [0,1,2,3,4,5]
-template_offset = (500, 0)
+template_offset = (0, 0)
 modeSetPixels = True
 
 ######## 
-global start_time, pixels_placed_count, template_size
+global start_time, end_time_cfg, end_time_var_cfg, pixels_placed_count, template_size
 start_time = time.time()
+end_time_cfg = 0 # both of them are done separately
+end_time_var_cfg = 0
+
 pixels_placed_count = 0
 template_size = (0,0)
 rgb_colors_array = []
@@ -66,20 +69,9 @@ def init_rgb_colors_array(ref_color_map):
 
 init_rgb_colors_array(ref_color_map=COLOR_MAP_FULL)
 
-def image_to_npy(img):
-    return np.asarray(img).transpose((1, 0, 2))
-
-
-#"https://github.com/r-ainbowroad/2023-minimap/blob/main/templates/mlp" 
-
-rPlaceTemplateBaseUrl = "https://media.githubusercontent.com/media/r-ainbowroad/2023-minimap/main/templates/mlp" 
-
 def getRPlaceTemplateUrl(ttype):
     return f'{rPlaceTemplateBaseUrl}/{ttype}.png'
 
-
-rPlaceTemplateNames = []
-rPlaceTemplates = {}
 def addRPlaceTemplate(templateName, options):
     rPlaceTemplates[templateName] = {
         'canvasUrl': getRPlaceTemplateUrl("canvas"),
@@ -88,9 +80,12 @@ def addRPlaceTemplate(templateName, options):
     }
     rPlaceTemplateNames.append(templateName)
 
+rPlaceTemplateBaseUrl = "https://media.githubusercontent.com/media/r-ainbowroad/2023-minimap/main/templates/mlp" 
+
+rPlaceTemplateNames = []
+rPlaceTemplates = {}
 
 addRPlaceTemplate("mlp"         , {'bot': False, 'mask': False}) ## TODO False for the time being
-
 
 # globals
 rPlaceTemplateName: Optional[str] = None
@@ -110,6 +105,38 @@ def setRPlaceTemplate(templateName):
     
     rPlaceTemplateName = templateName
     rPlaceTemplate = template
+
+def loadRTConfig(ini=False):
+    """
+    Loads additional configs from my github.io
+    currently a config.json plus masks
+    """
+    # https://github.com/r-ainbowroad/2023-minimap/blob/main/templates/mlp
+    url_img = "https://raw.githubusercontent.com/Zeepheru/Zeepheru.github.io/main/files"
+    url = "https://raw.githubusercontent.com/Zeepheru/Zeepheru.github.io/main/files"
+    json_url = f"{url}/config.json"
+
+    # response = requests.get(json_url)
+    try:
+        config = json.loads(urllib.request.urlopen(json_url).read())
+    except Exception as err:
+        print_exc()
+        log.warning("Attempt to obtain config.json failed.")
+        bot_exit(32)
+        return
+
+    if ini:
+        log.debug(json_url)
+        log.debug(f"JSON config loaded: {config}")
+
+    # sets mask image url
+    if config['mask_cfg']["mask"]:
+        mask_url = f"{url_img}/{config['mask_cfg']['mask_name']}.png"
+        rPlaceTemplate['maskUrl'] = mask_url
+        if ini:
+            log.debug(f"Set mask url for {config['mask_cfg']['mask_name']}: {mask_url}")
+    
+    return config
 
 def enlargenImage(im, offset):
     # basically a botch function to enlargen the size of the template image to that of a full potential board. 
@@ -133,7 +160,7 @@ def fetchTemplate(url):
     im = BytesIO(response.content)
     im = Image.open(im)
 
-    ### TODO Currently checks template for different size from prev, if so quits bot to avoid template-canvas mismatch
+    ### Currently checks template for different size from prev, if so quits bot to avoid template-canvas mismatch
     global template_size
     if template_size == (0,0):
         # initial update
@@ -148,9 +175,28 @@ def fetchTemplate(url):
 
     im = enlargenImage(im, offset=template_offset)
     # print(im.size)
-    im.save("template_test.png")
+    # im.save("template_test.png")
+    # im.show()
     
     im = image_to_npy(im)# raw -> intMatrix([W, H, (RGBA)])
+
+    if type(maskData) != type(None): # because Numpy complains if I do it the normal way
+        # print(im.shape)
+
+        # print(maskData.shape)
+        # print(maskData)
+
+        im2 = im.copy()
+        im2[maskData < 128] = [0,0,0,0]
+        # need to set it back to im
+
+        # im2 = Image.fromarray(im2, "RGBA")
+        # Image.fromarray(maskData, "L").show()
+        # im2.show()
+        # bot_exit()
+
+    else:
+        log.debug("Mask not applied. ")
 
     assert im.dtype == 'uint8', f'got dtype {im.dtype}, expected uint8'
     assert im.shape[2] == 4, f'got {im.shape[2]} color channels, expected 4 (RGBA)'
@@ -159,25 +205,37 @@ def fetchTemplate(url):
 def updateTemplate():
     global templateData
     global maskData
+
+    # maskData = np.zeros(templateData.shape, dtype=numpy.uint8)
+    if rPlaceTemplate['maskUrl'] is not None:
+        try:
+            response = requests.get(rPlaceTemplate['maskUrl'])
+            response.raise_for_status()
+            if response.status_code != 200:
+                log.warning("Unable to retrieve mask image.")
+                rPlaceTemplate['maskUrl'] = None
+                maskData = None
+
+            else:
+                im = BytesIO(response.content)
+                im = Image.open(im)
+                im = im.convert("L")
+                maskData = np.asarray(im)
+                # maskData = np.array(im)
+                
+                #loadMask()
+        except Exception as err:
+            print_exc()
+            log.error("Error updating mask:\n", err)
+
     rPlaceTemplateUrl = rPlaceTemplate['botUrl'] if rPlaceTemplate['botUrl'] is not None else rPlaceTemplate['canvasUrl']
     
     try:
         templateData = fetchTemplate(rPlaceTemplateUrl)# [W, H, (RGBA)]
     except Exception as err:
-        print("Error updating template")
+        log.error("Error updating template")
         raise err
     
-    # Also update mask if needed
-    maskData = np.zeros(templateData.shape, dtype=numpy.uint8)
-    if rPlaceTemplate['maskUrl'] is not None:
-        try:
-            submask = fetchTemplate(rPlaceTemplate['maskUrl'])# [W, H, (RGBA)]
-            maskData[:submask.shape[0], :submask.shape[1]] = submask
-            
-            #loadMask()
-        except Exception as err:
-            print_exc()
-            print("Error updating mask:\n", err)
 
 def visualizeDiff(diff):
     blank_white = Image.new("RGBA", (max_x, max_y), (255,255,255,255))
@@ -220,16 +278,16 @@ def getDiff(currentData, templateData):
             # print(curr_pixel[:3], temp_pixel[:3], x, y)
             diff.append([x, y])
 
-    # visualizeDiff(diff) # for visualizing the error pixels, error pixels are marked in red. 
+    visualizeDiff(diff) # for visualizing the error pixels, error pixels are marked in red. 
     
     log.info(f'Total Damage: {len(diff) / (templateData[:, :, 3] != 0.0).sum():.1%} | {len(diff)}/{(templateData[:, :, 3] != 0.0).sum()}')
     return diff
 
 def selectRandomPixel(diff):
-    if rPlaceTemplate['maskUrl'] is None or maskData is None:
-        pixel = random.choice(diff)
-    else:
-        pixel = selectRandomPixelWeighted(diff)
+    # if rPlaceTemplate['maskUrl'] is None or maskData is None: # not doing it this way
+    pixel = random.choice(diff)
+    # else:
+    #     pixel = selectRandomPixelWeighted(diff)
     
     (x, y) = pixel
     return x, y
@@ -248,6 +306,8 @@ class CLIBotConfig:
     duration = None
 
     authmethod = "token"
+
+    additional = {}
 
 class Placer:
     REDDIT_URL = "https://www.reddit.com"
@@ -557,7 +617,7 @@ def AttemptPlacement(place: Placer, diffcords: Optional[List[Tuple[int, int]]] =
             if rl_mode == 0:
                 global pixels_placed_count
                 # no rate limit
-                timestampOfSafePlace += random.uniform(2,10)
+                timestampOfSafePlace += random.uniform(2,11)
 
                 log.info(f"Placed Pixel '{COLOR_NAMES_MAP.get(hex_color, hex_color)}' at [{x-1500}, {y-1000}]. Can next place in {timestampOfSafePlace - time.time():.1f} seconds\n")
                 pixels_placed_count += 1
@@ -615,7 +675,7 @@ def updateCanvasState(ids: Union[int, List[int]]):
     
     return
 
-def bot_exit(exitcode):
+def bot_exit(exitcode=69):
     # to gracefully exit this thing.
     uptime = get_time_passed(start_time)
     log.info(f"Exit code: {exitcode}")
@@ -624,8 +684,7 @@ def bot_exit(exitcode):
 
     exit(exitcode)
 
-
-
+#############################
 if __name__ == '__main__':
     """
     python main.py -p [username] [password] -t [token] -am token
@@ -690,7 +749,7 @@ if __name__ == '__main__':
             logins_parsed = [login for login in logins if not login.startswith("#")] # remove comments. 
 
             login1 = logins_parsed[0]
-            if len(login1) == 3:
+            if len(login1.split(" ")) == 3:
                 # token given as well
                 cliBotConfig.username, cliBotConfig.password, cliBotConfig.session_token = login1.split(" ")
             else:
@@ -703,6 +762,7 @@ if __name__ == '__main__':
     # auth mode
     if cliBotConfig.session_token is None:
         args.authmethod = "login"
+        log.debug("Auth mode set to login. This is not likely to work. ")
     cliBotConfig.authmethod = args.authmethod
 
     # template
@@ -724,7 +784,12 @@ if __name__ == '__main__':
     botConfig = cliBotConfig
 
     place = init_webclient(botConfig)
-    updateTemplateState(botConfig.template)
+    setRPlaceTemplate(botConfig.template)
+    
+    loadRTConfig(ini=True)
+
+    updateTemplateState(botConfig.template) # HACK
+    
     
     timestampOfPlaceAttempt = 0
     time_to_wait = 0
@@ -736,16 +801,29 @@ if __name__ == '__main__':
                 # this is in place
                 place = init_webclient(botConfig)
             
-            # checks uptime, closes if exceeded
+            # checks uptimes, closes if exceeded
             if botConfig.duration != None:
                 if time.time() - start_time + time_to_wait > botConfig.duration:
                     log.warning(f"\nSpecified duration of {botConfig.duration} seconds is up/will be up. Exiting...")
                     bot_exit(10)
 
+            if end_time_cfg != 0:
+                # if 0, means no configured end time. 
+                stop_max = botConfig.additional["time_cfg"]["stop_delay_variations"]
+                if time.time() + time_to_wait > end_time_cfg and end_time_var_cfg == 0:
+                    end_time_var_cfg = random.uniform(1, stop_max)
+                    log.info(f"Configured end time reached. Randomised delay of {end_time_var_cfg:.1f} seconds generated. ")
+
+                if time.time() + time_to_wait > end_time_cfg + end_time_var_cfg:
+                    log.warning(f"\nConfigured time {end_time_cfg:.1f} + randomised delay {end_time_var_cfg:.1f} seconds is up/will be up. Exiting...")
+                    bot_exit(12)
+
+            ###
             for _ in tqdm(range(math.ceil(time_to_wait)), desc='waiting'): # fancy progress bar while waiting 
-                time.sleep(1)
+                time.sleep(0.86)
             
             try:
+                loadRTConfig(ini=False)
                 updateTemplate() #working
                 updateCanvasState(CURRENT_CANVASES)
                 timestampOfPlaceAttempt = AttemptPlacement(place)

@@ -33,8 +33,9 @@ ENV
 
 `10-19` - **Expected errors:**
 - `10` - Time limit
-- `11` - Keyboard interrupt
-
+- `11` - Keyboard interrupt 
+- `12` - External time limit (cfg)
+ 
 `20-29` - **Code / input errors:**
 - `20` - No token provided
 - `21` - Auth credentials not provided
@@ -42,10 +43,12 @@ ENV
 `30-39` - **Misc errors, revivable:**
 - `30` - Non 200 pixel placement code
 - `31` - Non-error pixel placement response
+- `32` - Errors related to config loading
 
 `40-49` - **Other errors that should not be reattempted, but will result in a restart anyway:**
 - `40` - Template size change *(disabled after top left corner reached)*
 
+`69` - Successful execution and early exit, for debug purposes only.
 
 `137` - Portainer Specific, container manually stopped via Portainer.
 

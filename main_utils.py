@@ -1,8 +1,13 @@
 import time
 import math
+import numpy as np
 
 def rgb_to_hex(rgb):
     return ("#%02x%02x%02x%02x" % rgb).upper()
+
+def image_to_npy(img):
+    # .transpose((1, 0, 2)) ... why?
+    return np.asarray(img)
 
 def closest_color(target_rgb, rgb_colors_array_in):
     # function to find the closest rgb color from palette to a target rgb color
