@@ -83,7 +83,9 @@ def addRPlaceTemplate(templateName, options):
     rPlaceTemplateNames.append(templateName)
 
 rPlaceTemplateBaseUrl = "https://media.githubusercontent.com/media/r-ainbowroad/2023-minimap/main/templates/mlp" 
+# rPlaceTemplateBaseUrl = "https://media.githubusercontent.com/media/r-ainbowroad/2023-minimap/main/templates/mlp_alliance" 
 
+# https://media.githubusercontent.com/media/r-ainbowroad/2023-minimap/main/templates/mlp_alliance/canvas.png
 rPlaceTemplateNames = []
 rPlaceTemplates = {}
 
@@ -137,6 +139,20 @@ def loadRTConfig(ini=False, nomask=False, overridestoptime=False):
         rPlaceTemplate['maskUrl'] = mask_url
         if ini:
             log.debug(f"Set mask url for {config['mask_cfg']['mask_name']}: {mask_url}")
+
+    # sets custom template
+    template_choice = config["template_cfg"]["template"]
+    urls = {
+        "mlp": "https://media.githubusercontent.com/media/r-ainbowroad/2023-minimap/main/templates/mlp/canvas.png",
+        "mlp_alliance": "https://media.githubusercontent.com/media/r-ainbowroad/2023-minimap/main/templates/mlp_alliance/canvas.png",
+        "mlp_custom": f"{url_img}/mlp_custom.png",
+        "mlp_alliance_custom": f"{url_img}/mlp_alliance_custom.png"
+    }
+    if template_choice != None:
+        url = urls[template_choice]
+        log.debug(f"Canvas obtained from: {url}")
+        rPlaceTemplate['canvasUrl'] = url
+
 
     # disables time limit
     if overridestoptime:
@@ -700,6 +716,10 @@ def updateCanvasState(ids: Union[int, List[int]]):
             canvas = image_to_npy(empty_img)
 
         currentData[xoffset:xoffset + xsize, yoffset:yoffset + ysize] = canvas
+
+    #manual canvas check
+    # im = Image.fromarray(currentData.transpose(1,0,2))
+    # im.save("current.png")
     
     return
 

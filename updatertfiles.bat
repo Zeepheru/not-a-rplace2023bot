@@ -1,5 +1,6 @@
 @echo off
 robocopy realtime_data\masks C:\Code\zeepheru-github-pages\files /E
+robocopy realtime_data\templates C:\Code\zeepheru-github-pages\files /E
 copy realtime_data\config.json C:\Code\zeepheru-github-pages\files
 
 cd C:\Code\zeepheru-github-pages
