@@ -60,3 +60,15 @@ ENV
 `137` - Portainer Specific, container manually stopped via Portainer.
 
 ~~ Max attempts of 1. ~~
+
+## Miscellaneous Future Reference
+
+https://www.epochconverter.com/
+
+https://github.com/r-ainbowroad/2023-minimap
+
+https://github.com/r-ainbowroad
+
+https://reqbin.com/ #API tester
+
+https://github.com/CloudburstSys/PonyPixel

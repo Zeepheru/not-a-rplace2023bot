@@ -737,6 +737,7 @@ if __name__ == '__main__':
     """
     python main.py -p [username] [password] -t [token] -am token
 
+    https://docs.python.org/3/library/argparse.html
     """
     # manual arg input
     test_args = []

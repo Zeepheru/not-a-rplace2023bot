@@ -1,7 +1,10 @@
 env
 logs
 ref
+
+# folders
 test_images
+deployment_archive
 realtime_data
 
 .git
